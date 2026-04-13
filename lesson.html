@@ -5,6 +5,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>西语词汇辨析</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    #edit-bar {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: #555;
+      color: #fff;
+      padding: 10px 20px;
+      z-index: 999;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    #edit-bar.visible { display: flex; }
+    #edit-bar strong { flex: 1; }
+    #edit-bar button {
+      padding: 6px 16px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit;
+    }
+    .btn-export-data { background: #fff; color: #555; }
+    .btn-cancel-edit { background: rgba(255,255,255,0.25); color: #fff; }
+
+    #edit-toggle {
+      position: fixed;
+      top: 12px; right: 20px;
+      background: #888;
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 998;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    .edit-mode .editable {
+      border: 1.5px dashed #aaa;
+      border-radius: 4px;
+      padding: 2px 6px;
+      background: #fafafa;
+      min-width: 40px;
+      display: inline-block;
+      outline: none;
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      line-height: inherit;
+    }
+    .edit-mode .editable:focus {
+      border-color: #666;
+      background: #f5f5f5;
+    }
+    .edit-mode .editable.block {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #export-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    #export-modal.visible { display: flex; }
+    .modal-box {
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 24px;
+      width: 680px;
+      max-width: 95vw;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .modal-box h3 { color: #ccc; font-size: 14px; font-weight: 400; font-family: "PingFang SC", sans-serif; }
+    .modal-box textarea {
+      flex: 1;
+      min-height: 400px;
+      background: #2d2d2d;
+      color: #d4d4d4;
+      border: none;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: "Fira Code", "Courier New", monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      resize: none;
+      outline: none;
+    }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+    .modal-actions button {
+      padding: 8px 20px; border: none; border-radius: 6px;
+      cursor: pointer; font-size: 13px; font-weight: 600;
+      font-family: "PingFang SC", sans-serif;
+    }
+    .btn-copy-modal { background: #555; color: #fff; }
+    .btn-copy-modal.copied { background: #2d6a2d; color: #9f9; }
+    .btn-close-modal { background: #444; color: #ccc; }
+
+    @media print {
+      #edit-toggle, #edit-bar { display: none !important; }
+    }
+  </style>
 </head>
 <body>
 <div class="page">
@@ -19,22 +130,44 @@
 
 </div>
 
+<div id="edit-bar">
+  <strong>✏️ 编辑模式 · 直接点击文字修改</strong>
+  <button class="btn-export-data" onclick="exportData()">导出 data.js</button>
+  <button class="btn-cancel-edit" onclick="toggleEdit(false)">取消</button>
+</div>
+
+<button id="edit-toggle" onclick="toggleEdit(true)">✏️ 编辑</button>
+
+<div id="export-modal">
+  <div class="modal-box">
+    <h3>📋 复制以下代码，保存为 data<span id="modal-id">001</span>.js</h3>
+    <textarea id="export-textarea" readonly></textarea>
+    <div class="modal-actions">
+      <button class="btn-copy-modal" id="modal-copy-btn" onclick="copyExport()">复制代码</button>
+      <button class="btn-close-modal" onclick="closeExport()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <script>
-/* 从 URL 读取 ?id=001 */
 function getParam(key) {
   var params = new URLSearchParams(window.location.search);
   return params.get(key);
 }
 
-var id = getParam("id");
+var id = getParam("id") || "001";
+var CURRENT_DATA = null;
 
-if (!id) {
+if (!getParam("id")) {
   document.getElementById("app").innerHTML = "<div class='loading'>未指定篇目，请从目录进入。</div>";
 } else {
-  /* 动态加载对应的 data 文件 */
   var script = document.createElement("script");
   script.src = "data" + id + ".js";
-  script.onload = function() { render(DATA); };
+  script.onload = function() {
+    CURRENT_DATA = JSON.parse(JSON.stringify(DATA));
+    render(CURRENT_DATA);
+    document.getElementById("modal-id").textContent = id;
+  };
   script.onerror = function() {
     document.getElementById("app").innerHTML =
       "<div class='loading'>找不到 data" + id + ".js，请检查文件是否存在。</div>";
@@ -61,31 +194,36 @@ function render(data) {
     renderExercises(data);
 }
 
+/* 可编辑 span 工厂 */
+function E(value, path, block) {
+  var cls = "editable" + (block ? " block" : "");
+  return "<span class='" + cls + "' contenteditable='false' data-path='" + path + "'>" + (value || "") + "</span>";
+}
+
+/* ── 页眉：只保留标题，删除模块标签和右上角 tag ── */
 function renderHeader(data) {
   return "<div class='header'>" +
     "<div>" +
-    "<div class='module-tag'>" + data.meta.module + "</div>" +
-    "<h1>" + data.meta.title + "</h1>" +
+    "<h1>" + E(data.meta.title, "meta.title") + "</h1>" +
     "</div>" +
-    "<div class='header-tag'>" + data.meta.tag + "</div>" +
     "</div>";
 }
 
+/* ── 对比表：只保留词义和用法，删除核心搭配 ── */
 function renderCompareTable(data) {
   var headers = "<th class='label-col'></th>";
   for (var i = 0; i < data.words.length; i++) {
-    headers += "<th>" + data.words[i].word + "</th>";
+    headers += "<th>" + E(data.words[i].word, "words." + i + ".word") + "</th>";
   }
   var rowDefs = [
-    { label: "词义",    key: "meaning" },
-    { label: "用法",    key: "usage"   },
-    { label: "核心搭配", key: "core"   }
+    { label: "词义", key: "meaning" },
+    { label: "用法", key: "usage"   }
   ];
   var rows = "";
   for (var r = 0; r < rowDefs.length; r++) {
     rows += "<tr><td class='label-col'>" + rowDefs[r].label + "</td>";
     for (var i = 0; i < data.words.length; i++) {
-      rows += "<td>" + data.words[i].compare[rowDefs[r].key] + "</td>";
+      rows += "<td>" + E(data.words[i].compare[rowDefs[r].key], "words." + i + ".compare." + rowDefs[r].key) + "</td>";
     }
     rows += "</tr>";
   }
@@ -94,47 +232,45 @@ function renderCompareTable(data) {
 }
 
 function renderDetailGrid(data) {
-  var count = data.words.length;
-  var gridClass = "detail-grid";
-
   var cards = "";
-  for (var i = 0; i < count; i++) {
+  for (var i = 0; i < data.words.length; i++) {
     var w = data.words[i];
 
     var phrases = "";
     for (var p = 0; p < w.collocations.length; p++) {
-      var c = w.collocations[p];
       phrases += "<div class='phrase-item'>" +
-        "<span class='phrase-es'>" + c.phrase + "</span>" +
-        "<span class='phrase-zh'>" + c.phrase_zh + "</span>" +
+        "<span class='phrase-es'>" + E(w.collocations[p].phrase,    "words." + i + ".collocations." + p + ".phrase") + "</span>" +
+        "<span class='phrase-zh'>" + E(w.collocations[p].phrase_zh, "words." + i + ".collocations." + p + ".phrase_zh") + "</span>" +
         "</div>";
     }
 
     var examples = "";
     for (var p = 0; p < w.examples.length; p++) {
-      var ex = w.examples[p];
       examples += "<div class='example-item'>" +
-        "<div class='example-es'>" + ex.es + "</div>" +
-        "<div class='example-zh'>" + ex.zh + "</div>" +
+        "<div class='example-es'>" + E(w.examples[p].es, "words." + i + ".examples." + p + ".es", true) + "</div>" +
+        "<div class='example-zh'>" + E(w.examples[p].zh, "words." + i + ".examples." + p + ".zh", true) + "</div>" +
         "</div>";
     }
 
     var related = "";
     for (var r = 0; r < w.related.length; r++) {
       related += "<span class='related-tag'><strong>" +
-        w.related[r].word + "</strong> " + w.related[r].note + "</span>";
+        E(w.related[r].word, "words." + i + ".related." + r + ".word") +
+        "</strong> " +
+        E(w.related[r].note, "words." + i + ".related." + r + ".note") +
+        "</span>";
     }
 
     cards += "<div class='word-card'>" +
       "<div class='word-card-header'>" +
-      "<span class='word-title'>" + w.word + "</span>" +
-      "<span class='word-pos'>" + w.pos + "</span>" +
+      "<span class='word-title'>" + E(w.word, "words." + i + ".word") + "</span>" +
+      "<span class='word-pos'>"   + E(w.pos,  "words." + i + ".pos")  + "</span>" +
       "</div>" +
       "<div class='word-card-body'>" +
       "<div><div class='card-label'>词义</div>" +
-      "<div class='card-content'>" + w.meaning + "</div></div>" +
+      "<div class='card-content'>" + E(w.meaning, "words." + i + ".meaning", true) + "</div></div>" +
       "<div><div class='card-label'>联想记忆</div>" +
-      "<div class='memory-box'>" + w.memory + "</div></div>" +
+      "<div class='memory-box'>"   + E(w.memory,  "words." + i + ".memory",  true) + "</div></div>" +
       "<div><div class='card-label'>常见搭配</div>" +
       "<div class='phrase-list'>" + phrases + "</div></div>" +
       "<div><div class='card-label'>例句</div>" +
@@ -143,8 +279,7 @@ function renderDetailGrid(data) {
       "<div class='related-list'>" + related + "</div></div>" +
       "</div></div>";
   }
-
-  return "<div class='" + gridClass + "'>" + cards + "</div>";
+  return "<div class='detail-grid'>" + cards + "</div>";
 }
 
 function renderExercises(data) {
@@ -161,10 +296,9 @@ function renderExercises(data) {
     if (ex.type === "cn-fill" || ex.type === "es-fill") {
       var items = "";
       for (var i = 0; i < ex.items.length; i++) {
-        var q = ex.items[i].q.replace("___", "<span class='blank'></span>");
         items += "<div class='exercise-item'>" +
           "<span class='q-num'>" + (i + 1) + ".</span>" +
-          "<span>" + q + "</span></div>";
+          "<span>" + E(ex.items[i].q, "exercises." + e + ".items." + i + ".q", true) + "</span></div>";
       }
       body = "<div class='word-bank'>" + wordBank + "</div>" +
         "<div class='exercise-items'>" + items + "</div>";
@@ -177,9 +311,9 @@ function renderExercises(data) {
           "<span class='wrong-word'>" + item.wrong + "</span>"
         );
         body += "<div class='correction-item'>" + sentence +
-          "<div class='correction-note'>\u9519\u8bef\u8bcd\uff1a<span>" + item.wrong +
-          "</span> \u2192 \u5e94\u6539\u4e3a\uff1a<span>" + item.correct + "</span>" +
-          "&nbsp;\uff5c&nbsp;" + item.note + "</div></div>";
+          "<div class='correction-note'>错误词：<span>" + item.wrong +
+          "</span> → 应改为：<span>" + E(item.correct, "exercises." + e + ".items." + i + ".correct") + "</span>" +
+          "&nbsp;｜&nbsp;" + E(item.note, "exercises." + e + ".items." + i + ".note", true) + "</div></div>";
       }
     }
 
@@ -200,16 +334,168 @@ function renderExercises(data) {
       ans += "<strong>" + (i + 1) + ".</strong> " +
         data.exercises[e].items[i].answer + "&nbsp;&nbsp;";
     }
-    answerRows += "<div class='answer-row'>\u7b2c" + layerNum +
-      "\u9898\uff1a" + ans + "</div>";
+    answerRows += "<div class='answer-row'>第" + layerNum + "题：" + ans + "</div>";
     layerNum++;
   }
 
   html += "<div class='answer-section'>" +
-    "<div class='answer-title'>\u53c2\u8003\u7b54\u6848</div>" +
+    "<div class='answer-title'>参考答案</div>" +
     answerRows + "</div>";
 
   return html;
+}
+
+/* ════════════════════════════════
+   编辑模式
+════════════════════════════════ */
+var editMode = false;
+
+function toggleEdit(on) {
+  editMode = on;
+  document.body.classList.toggle("edit-mode", on);
+  document.getElementById("edit-bar").classList.toggle("visible", on);
+  document.getElementById("edit-toggle").style.display = on ? "none" : "block";
+  var els = document.querySelectorAll(".editable");
+  for (var i = 0; i < els.length; i++) {
+    els[i].contentEditable = on ? "true" : "false";
+  }
+}
+
+function setPath(obj, path, value) {
+  var parts = path.split(".");
+  for (var i = 0; i < parts.length - 1; i++) {
+    obj = obj[parts[i]];
+  }
+  obj[parts[parts.length - 1]] = value;
+}
+
+function syncEdits() {
+  var els = document.querySelectorAll(".editable");
+  for (var i = 0; i < els.length; i++) {
+    var path  = els[i].getAttribute("data-path");
+    var value = els[i].innerText.trim();
+    setPath(CURRENT_DATA, path, value);
+  }
+}
+
+/* ════════════════════════════════
+   导出
+════════════════════════════════ */
+function q(s)   { return '"' + (s || "").replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'; }
+function ind(n) { return "  ".repeat(n); }
+
+function exportData() {
+  syncEdits();
+  var d = CURRENT_DATA;
+  var L = [];
+
+  L.push("var DATA = {");
+  L.push("");
+  L.push(ind(1) + "/* ── 页眉 ── */");
+  L.push(ind(1) + "meta: {");
+  L.push(ind(2) + "module: " + q(d.meta.module) + ",");
+  L.push(ind(2) + "title:  " + q(d.meta.title)  + ",");
+  L.push(ind(2) + "tag:    " + q(d.meta.tag));
+  L.push(ind(1) + "},");
+  L.push("");
+  L.push(ind(1) + "/* ── 词汇列表 ── */");
+  L.push(ind(1) + "words: [");
+
+  for (var wi = 0; wi < d.words.length; wi++) {
+    var w = d.words[wi];
+    var wlast = wi === d.words.length - 1;
+    L.push(ind(2) + "{");
+    L.push(ind(3) + "word:    " + q(w.word)    + ",");
+    L.push(ind(3) + "pos:     " + q(w.pos)     + ",");
+    L.push(ind(3) + "meaning: " + q(w.meaning) + ",");
+    L.push(ind(3) + "memory:  " + q(w.memory)  + ",");
+
+    L.push(ind(3) + "collocations: [");
+    for (var ci = 0; ci < w.collocations.length; ci++) {
+      var clast = ci === w.collocations.length - 1;
+      L.push(ind(4) + "{ phrase: " + q(w.collocations[ci].phrase) + ", phrase_zh: " + q(w.collocations[ci].phrase_zh) + " }" + (clast ? "" : ","));
+    }
+    L.push(ind(3) + "],");
+
+    L.push(ind(3) + "examples: [");
+    for (var ei = 0; ei < w.examples.length; ei++) {
+      var elast = ei === w.examples.length - 1;
+      L.push(ind(4) + "{");
+      L.push(ind(5) + "es: " + q(w.examples[ei].es) + ",");
+      L.push(ind(5) + "zh: " + q(w.examples[ei].zh));
+      L.push(ind(4) + "}" + (elast ? "" : ","));
+    }
+    L.push(ind(3) + "],");
+
+    L.push(ind(3) + "related: [");
+    for (var ri = 0; ri < w.related.length; ri++) {
+      var rlast = ri === w.related.length - 1;
+      L.push(ind(4) + "{ word: " + q(w.related[ri].word) + ", note: " + q(w.related[ri].note) + " }" + (rlast ? "" : ","));
+    }
+    L.push(ind(3) + "],");
+
+    L.push(ind(3) + "compare: {");
+    L.push(ind(4) + "meaning: " + q(w.compare.meaning) + ",");
+    L.push(ind(4) + "usage:   " + q(w.compare.usage)   + ",");
+    L.push(ind(4) + "core:    " + q(w.compare.core));
+    L.push(ind(3) + "}");
+    L.push(ind(2) + "}" + (wlast ? "" : ","));
+  }
+
+  L.push(ind(1) + "],");
+  L.push("");
+  L.push(ind(1) + "/* ── 练习题 ── */");
+  L.push(ind(1) + "exercises: [");
+
+  for (var xe = 0; xe < d.exercises.length; xe++) {
+    var ex = d.exercises[xe];
+    var xlast = xe === d.exercises.length - 1;
+    L.push(ind(2) + "{");
+    L.push(ind(3) + "type:  " + q(ex.type)  + ",");
+    L.push(ind(3) + "title: " + q(ex.title) + ",");
+    L.push(ind(3) + "hint:  " + q(ex.hint)  + ",");
+    L.push(ind(3) + "items: [");
+
+    for (var ii = 0; ii < ex.items.length; ii++) {
+      var item  = ex.items[ii];
+      var ilast = ii === ex.items.length - 1;
+      if (ex.type === "cn-fill" || ex.type === "es-fill") {
+        L.push(ind(4) + "{ q: " + q(item.q) + ", answer: " + q(item.answer) + " }" + (ilast ? "" : ","));
+      } else {
+        L.push(ind(4) + "{");
+        L.push(ind(5) + "sentence: " + q(item.sentence) + ",");
+        L.push(ind(5) + "wrong:    " + q(item.wrong)    + ",");
+        L.push(ind(5) + "correct:  " + q(item.correct)  + ",");
+        L.push(ind(5) + "note:     " + q(item.note));
+        L.push(ind(4) + "}" + (ilast ? "" : ","));
+      }
+    }
+    L.push(ind(3) + "]");
+    L.push(ind(2) + "}" + (xlast ? "" : ","));
+  }
+
+  L.push(ind(1) + "]");
+  L.push("};");
+
+  document.getElementById("export-textarea").value = L.join("\n");
+  document.getElementById("export-modal").classList.add("visible");
+}
+
+function copyExport() {
+  var ta  = document.getElementById("export-textarea");
+  var btn = document.getElementById("modal-copy-btn");
+  navigator.clipboard.writeText(ta.value).then(function() {
+    btn.textContent = "✓ 已复制";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = "复制代码";
+      btn.classList.remove("copied");
+    }, 2000);
+  });
+}
+
+function closeExport() {
+  document.getElementById("export-modal").classList.remove("visible");
 }
 </script>
 </body>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>词汇辨析 · 编辑器</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f0; color: #1a1a1a; font-size: 14px; }
+
+  .app { display: flex; height: 100vh; }
+
+  /* 左侧表单 */
+  .form-panel { width: 520px; min-width: 520px; height: 100vh; overflow-y: auto; background: #fff; border-right: 1px solid #e0e0d8; padding: 24px; }
+  .form-panel h1 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .form-panel .sub { color: #888; font-size: 12px; margin-bottom: 24px; }
+
+  /* 右侧输出 */
+  .output-panel { flex: 1; height: 100vh; overflow-y: auto; background: #1e1e1e; padding: 24px; }
+  .output-panel h2 { color: #ccc; font-size: 13px; font-weight: 400; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; }
+  pre { color: #d4d4d4; font-family: "Fira Code", "Courier New", monospace; font-size: 12.5px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+
+  /* 区块 */
+  .section { margin-bottom: 28px; }
+  .section-title { font-size: 13px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid #f0ede6; }
+
+  /* 卡片 */
+  .card { background: #fafaf7; border: 1px solid #e8e5de; border-radius: 8px; padding: 16px; margin-bottom: 12px; position: relative; }
+  .card-title { font-size: 12px; font-weight: 700; color: #888; margin-bottom: 10px; }
+
+  /* 表单元素 */
+  label { display: block; font-size: 12px; color: #666; margin-bottom: 4px; margin-top: 10px; }
+  label:first-child { margin-top: 0; }
+  input[type="text"], textarea, select {
+    width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px;
+    font-size: 13px; font-family: inherit; background: #fff; color: #1a1a1a;
+    transition: border-color .15s;
+  }
+  input[type="text"]:focus, textarea:focus { outline: none; border-color: #c8a96e; }
+  textarea { resize: vertical; min-height: 56px; }
+
+  /* 行内组 */
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+
+  /* 按钮 */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 13px; font-family: inherit; font-weight: 600; transition: background .15s; }
+  .btn-add { background: #f0ede6; color: #555; }
+  .btn-add:hover { background: #e8e3d8; }
+  .btn-del { position: absolute; top: 10px; right: 10px; background: none; border: none; cursor: pointer; color: #bbb; font-size: 16px; line-height: 1; padding: 2px 6px; border-radius: 4px; }
+  .btn-del:hover { background: #fee; color: #e55; }
+  .btn-export { background: #c8a96e; color: #fff; padding: 10px 20px; font-size: 14px; width: 100%; justify-content: center; margin-top: 8px; }
+  .btn-export:hover { background: #b8954f; }
+  .btn-copy { background: #3a3a3a; color: #ccc; padding: 7px 16px; font-size: 12px; }
+  .btn-copy:hover { background: #555; }
+  .btn-copy.copied { background: #2d6a2d; color: #9f9; }
+
+  /* 词条 tab */
+  .word-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .word-tab { padding: 5px 12px; border-radius: 20px; border: 1px solid #ddd; background: #f5f5f0; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .word-tab.active { background: #c8a96e; color: #fff; border-color: #c8a96e; }
+
+  .word-block { display: none; }
+  .word-block.active { display: block; }
+
+  /* 小标签 */
+  .mini-list { display: flex; flex-direction: column; gap: 6px; }
+  .mini-row { display: flex; gap: 6px; align-items: center; }
+  .mini-row input { flex: 1; }
+  .mini-del { background: none; border: none; cursor: pointer; color: #ccc; font-size: 16px; padding: 0 4px; }
+  .mini-del:hover { color: #e55; }
+
+  .output-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+
+  /* 练习题 */
+  .ex-item { background: #fafaf7; border: 1px solid #e8e5de; border-radius: 6px; padding: 12px; margin-bottom: 8px; position: relative; }
+  .ex-item label { margin-top: 8px; }
+  .ex-item label:first-child { margin-top: 0; }
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══════════════ 左侧表单 ═══════════════ -->
+<div class="form-panel">
+  <h1>📝 词汇辨析编辑器</h1>
+  <p class="sub">填写内容后点击「生成代码」，复制右侧代码保存为 data00X.js</p>
+
+  <!-- 页眉 -->
+  <div class="section">
+    <div class="section-title">页眉信息</div>
+    <label>编号（如 001）</label>
+    <input type="text" id="meta-id" value="001" placeholder="001">
+    <label>模块名</label>
+    <input type="text" id="meta-module" value="模块一 · 形近词辨析" placeholder="模块一 · 形近词辨析">
+    <label>标题</label>
+    <input type="text" id="meta-title" placeholder="ex- 家族四兄弟">
+    <label>标签（右上角小标）</label>
+    <input type="text" id="meta-tag" placeholder="PRUEBA 1 · LÉXICO">
+  </div>
+
+  <!-- 词条 -->
+  <div class="section">
+    <div class="section-title">词条列表</div>
+    <div class="word-tabs" id="word-tabs"></div>
+    <div id="word-blocks"></div>
+    <button class="btn btn-add" onclick="addWord()">＋ 添加词条</button>
+  </div>
+
+  <!-- 练习题 -->
+  <div class="section">
+    <div class="section-title">练习题 · 中文情景填空</div>
+    <div id="ex-cn-list" class="mini-list"></div>
+    <button class="btn btn-add" style="margin-top:8px" onclick="addExCn()">＋ 添加题目</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">练习题 · 西语填空</div>
+    <div id="ex-es-list" class="mini-list"></div>
+    <button class="btn btn-add" style="margin-top:8px" onclick="addExEs()">＋ 添加题目</button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">练习题 · 判断改错</div>
+    <div id="ex-corr-list" class="mini-list"></div>
+    <button class="btn btn-add" style="margin-top:8px" onclick="addExCorr()">＋ 添加题目</button>
+  </div>
+
+  <button class="btn btn-export" onclick="generate()">⚡ 生成代码</button>
+</div>
+
+<!-- ═══════════════ 右侧输出 ═══════════════ -->
+<div class="output-panel">
+  <div class="output-header">
+    <h2>生成的 data00X.js</h2>
+    <button class="btn btn-copy" id="copy-btn" onclick="copyCode()">复制代码</button>
+  </div>
+  <pre id="output">← 填写左侧表单后点击「生成代码」</pre>
+</div>
+
+</div>
+<script>
+// ─── 词条管理 ───
+var words = [];
+var activeWord = 0;
+
+function addWord() {
+  var idx = words.length;
+  words.push({
+    word: "", pos: "", meaning: "", memory: "",
+    collocations: [], examples: [], related: [],
+    compare_meaning: "", compare_usage: "", compare_core: ""
+  });
+  renderWordTabs();
+  switchWord(idx);
+}
+
+function renderWordTabs() {
+  var tabs = document.getElementById("word-tabs");
+  var blocks = document.getElementById("word-blocks");
+  tabs.innerHTML = "";
+  blocks.innerHTML = "";
+
+  words.forEach(function(w, i) {
+    var tab = document.createElement("div");
+    tab.className = "word-tab" + (i === activeWord ? " active" : "");
+    tab.textContent = w.word || ("词条 " + (i + 1));
+    tab.onclick = function() { switchWord(i); };
+    tabs.appendChild(tab);
+
+    var block = document.createElement("div");
+    block.className = "word-block" + (i === activeWord ? " active" : "");
+    block.id = "word-block-" + i;
+    block.innerHTML = wordBlockHTML(i);
+    blocks.appendChild(block);
+  });
+}
+
+function wordBlockHTML(i) {
+  var w = words[i];
+  return '<div class="card">' +
+    '<div class="card-title">基本信息</div>' +
+    '<label>西语词</label><input type="text" value="' + esc(w.word) + '" oninput="words[' + i + '].word=this.value;updateTab(' + i + ')">' +
+    '<label>词性</label><input type="text" value="' + esc(w.pos) + '" placeholder="f. 名词" oninput="words[' + i + '].pos=this.value">' +
+    '<label>中文释义</label><textarea oninput="words[' + i + '].meaning=this.value">' + esc(w.meaning) + '</textarea>' +
+    '<label>记忆法</label><textarea oninput="words[' + i + '].memory=this.value">' + esc(w.memory) + '</textarea>' +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">搭配 collocations</div>' +
+    '<div id="colls-' + i + '" class="mini-list">' + collsHTML(i) + '</div>' +
+    '<button class="btn btn-add" style="margin-top:8px" onclick="addColl(' + i + ')">＋ 搭配</button>' +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">例句 examples</div>' +
+    '<div id="exs-' + i + '" class="mini-list">' + exsHTML(i) + '</div>' +
+    '<button class="btn btn-add" style="margin-top:8px" onclick="addEx(' + i + ')">＋ 例句</button>' +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">相关词 related</div>' +
+    '<div id="rels-' + i + '" class="mini-list">' + relsHTML(i) + '</div>' +
+    '<button class="btn btn-add" style="margin-top:8px" onclick="addRel(' + i + ')">＋ 相关词</button>' +
+    '</div>' +
+
+    '<div class="card">' +
+    '<div class="card-title">辨析表格 compare</div>' +
+    '<label>含义</label><input type="text" value="' + esc(w.compare_meaning) + '" oninput="words[' + i + '].compare_meaning=this.value">' +
+    '<label>用法</label><input type="text" value="' + esc(w.compare_usage) + '" oninput="words[' + i + '].compare_usage=this.value">' +
+    '<label>核心搭配</label><input type="text" value="' + esc(w.compare_core) + '" oninput="words[' + i + '].compare_core=this.value">' +
+    '</div>' +
+
+    '<button class="btn btn-del" style="position:static;margin-top:4px;background:#fee;color:#e55;width:100%;justify-content:center" onclick="removeWord(' + i + ')">🗑 删除此词条</button>';
+}
+
+function collsHTML(i) {
+  return words[i].collocations.map(function(c, j) {
+    return '<div class="mini-row">' +
+      '<input type="text" value="' + esc(c.phrase) + '" placeholder="搭配短语" oninput="words[' + i + '].collocations[' + j + '].phrase=this.value">' +
+      '<input type="text" value="' + esc(c.phrase_zh) + '" placeholder="中文" oninput="words[' + i + '].collocations[' + j + '].phrase_zh=this.value">' +
+      '<button class="mini-del" onclick="removeColl(' + i + ',' + j + ')">×</button></div>';
+  }).join("");
+}
+
+function exsHTML(i) {
+  return words[i].examples.map(function(e, j) {
+    return '<div class="ex-item">' +
+      '<label>西语</label><textarea oninput="words[' + i + '].examples[' + j + '].es=this.value">' + esc(e.es) + '</textarea>' +
+      '<label>中文</label><textarea oninput="words[' + i + '].examples[' + j + '].zh=this.value">' + esc(e.zh) + '</textarea>' +
+      '<button class="mini-del" style="position:absolute;top:8px;right:8px" onclick="removeEx(' + i + ',' + j + ')">×</button></div>';
+  }).join("");
+}
+
+function relsHTML(i) {
+  return words[i].related.map(function(r, j) {
+    return '<div class="mini-row">' +
+      '<input type="text" value="' + esc(r.word) + '" placeholder="词" oninput="words[' + i + '].related[' + j + '].word=this.value">' +
+      '<input type="text" value="' + esc(r.note) + '" placeholder="说明" oninput="words[' + i + '].related[' + j + '].note=this.value">' +
+      '<button class="mini-del" onclick="removeRel(' + i + ',' + j + ')">×</button></div>';
+  }).join("");
+}
+
+function switchWord(i) {
+  activeWord = i;
+  renderWordTabs();
+}
+
+function updateTab(i) {
+  var tabs = document.getElementById("word-tabs").children;
+  if (tabs[i]) tabs[i].textContent = words[i].word || ("词条 " + (i + 1));
+}
+
+function removeWord(i) {
+  words.splice(i, 1);
+  activeWord = Math.max(0, i - 1);
+  renderWordTabs();
+}
+
+function addColl(i) {
+  words[i].collocations.push({ phrase: "", phrase_zh: "" });
+  document.getElementById("colls-" + i).innerHTML = collsHTML(i);
+}
+function removeColl(i, j) {
+  words[i].collocations.splice(j, 1);
+  document.getElementById("colls-" + i).innerHTML = collsHTML(i);
+}
+function addEx(i) {
+  words[i].examples.push({ es: "", zh: "" });
+  document.getElementById("exs-" + i).innerHTML = exsHTML(i);
+}
+function removeEx(i, j) {
+  words[i].examples.splice(j, 1);
+  document.getElementById("exs-" + i).innerHTML = exsHTML(i);
+}
+function addRel(i) {
+  words[i].related.push({ word: "", note: "" });
+  document.getElementById("rels-" + i).innerHTML = relsHTML(i);
+}
+function removeRel(i, j) {
+  words[i].related.splice(j, 1);
+  document.getElementById("rels-" + i).innerHTML = relsHTML(i);
+}
+
+// ─── 练习题管理 ───
+var exCn   = [];
+var exEs   = [];
+var exCorr = [];
+
+function addExCn() {
+  exCn.push({ q: "", answer: "" });
+  renderExCn();
+}
+function renderExCn() {
+  document.getElementById("ex-cn-list").innerHTML = exCn.map(function(item, i) {
+    return '<div class="ex-item">' +
+      '<label>题目（用___表示空格）</label>' +
+      '<textarea oninput="exCn[' + i + '].q=this.value">' + esc(item.q) + '</textarea>' +
+      '<label>答案</label>' +
+      '<input type="text" value="' + esc(item.answer) + '" oninput="exCn[' + i + '].answer=this.value">' +
+      '<button class="mini-del" style="position:absolute;top:8px;right:8px" onclick="exCn.splice(' + i + ',1);renderExCn()">×</button></div>';
+  }).join("");
+}
+
+function addExEs() {
+  exEs.push({ q: "", answer: "" });
+  renderExEs();
+}
+function renderExEs() {
+  document.getElementById("ex-es-list").innerHTML = exEs.map(function(item, i) {
+    return '<div class="ex-item">' +
+      '<label>西语句子（用___表示空格）</label>' +
+      '<textarea oninput="exEs[' + i + '].q=this.value">' + esc(item.q) + '</textarea>' +
+      '<label>答案</label>' +
+      '<input type="text" value="' + esc(item.answer) + '" oninput="exEs[' + i + '].answer=this.value">' +
+      '<button class="mini-del" style="position:absolute;top:8px;right:8px" onclick="exEs.splice(' + i + ',1);renderExEs()">×</button></div>';
+  }).join("");
+}
+
+function addExCorr() {
+  exCorr.push({ sentence: "", wrong: "", correct: "", note: "" });
+  renderExCorr();
+}
+function renderExCorr() {
+  document.getElementById("ex-corr-list").innerHTML = exCorr.map(function(item, i) {
+    return '<div class="ex-item">' +
+      '<label>句子（错误词用 {词} 包裹）</label>' +
+      '<textarea oninput="exCorr[' + i + '].sentence=this.value">' + esc(item.sentence) + '</textarea>' +
+      '<div class="row">' +
+      '<div><label>错误词</label><input type="text" value="' + esc(item.wrong) + '" oninput="exCorr[' + i + '].wrong=this.value"></div>' +
+      '<div><label>正确词</label><input type="text" value="' + esc(item.correct) + '" oninput="exCorr[' + i + '].correct=this.value"></div>' +
+      '</div>' +
+      '<label>说明</label><input type="text" value="' + esc(item.note) + '" oninput="exCorr[' + i + '].note=this.value">' +
+      '<button class="mini-del" style="position:absolute;top:8px;right:8px" onclick="exCorr.splice(' + i + ',1);renderExCorr()">×</button></div>';
+  }).join("");
+}
+
+// ─── 工具 ───
+function esc(s) {
+  return (s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function q(s) {
+  return '"' + (s || "").replace(/\\/g,"\\\\").replace(/"/g,'\\"') + '"';
+}
+function ind(n) { return "  ".repeat(n); }
+
+// ─── 生成代码 ───
+function generate() {
+  var id     = document.getElementById("meta-id").value.trim() || "001";
+  var module = document.getElementById("meta-module").value.trim();
+  var title  = document.getElementById("meta-title").value.trim();
+  var tag    = document.getElementById("meta-tag").value.trim();
+
+  var lines = [];
+  lines.push("var DATA = {");
+  lines.push("");
+  lines.push(ind(1) + "/* ── 页眉 ── */");
+  lines.push(ind(1) + "meta: {");
+  lines.push(ind(2) + "module: " + q(module) + ",");
+  lines.push(ind(2) + "title:  " + q(title) + ",");
+  lines.push(ind(2) + "tag:    " + q(tag));
+  lines.push(ind(1) + "},");
+  lines.push("");
+  lines.push(ind(1) + "/* ── 词汇列表 ── */");
+  lines.push(ind(1) + "words: [");
+
+  words.forEach(function(w, wi) {
+    lines.push(ind(2) + "{");
+    lines.push(ind(3) + "word:    " + q(w.word) + ",");
+    lines.push(ind(3) + "pos:     " + q(w.pos) + ",");
+    lines.push(ind(3) + "meaning: " + q(w.meaning) + ",");
+    lines.push(ind(3) + "memory:  " + q(w.memory) + ",");
+
+    // collocations
+    lines.push(ind(3) + "collocations: [");
+    w.collocations.forEach(function(c, ci) {
+      var comma = ci < w.collocations.length - 1 ? "," : "";
+      lines.push(ind(4) + "{ phrase: " + q(c.phrase) + ", phrase_zh: " + q(c.phrase_zh) + " }" + comma);
+    });
+    lines.push(ind(3) + "],");
+
+    // examples
+    lines.push(ind(3) + "examples: [");
+    w.examples.forEach(function(e, ei) {
+      var comma = ei < w.examples.length - 1 ? "," : "";
+      lines.push(ind(4) + "{");
+      lines.push(ind(5) + "es: " + q(e.es) + ",");
+      lines.push(ind(5) + "zh: " + q(e.zh));
+      lines.push(ind(4) + "}" + comma);
+    });
+    lines.push(ind(3) + "],");
+
+    // related
+    lines.push(ind(3) + "related: [");
+    w.related.forEach(function(r, ri) {
+      var comma = ri < w.related.length - 1 ? "," : "";
+      lines.push(ind(4) + "{ word: " + q(r.word) + ", note: " + q(r.note) + " }" + comma);
+    });
+    lines.push(ind(3) + "],");
+
+    // compare
+    lines.push(ind(3) + "compare: {");
+    lines.push(ind(4) + "meaning: " + q(w.compare_meaning) + ",");
+    lines.push(ind(4) + "usage:   " + q(w.compare_usage) + ",");
+    lines.push(ind(4) + "core:    " + q(w.compare_core));
+    lines.push(ind(3) + "}");
+
+    var wcomma = wi < words.length - 1 ? "," : "";
+    lines.push(ind(2) + "}" + wcomma);
+  });
+
+  lines.push(ind(1) + "],");
+  lines.push("");
+  lines.push(ind(1) + "/* ── 练习题 ── */");
+  lines.push(ind(1) + "exercises: [");
+
+  // cn-fill
+  if (exCn.length > 0) {
+    lines.push(ind(2) + "{");
+    lines.push(ind(3) + 'type:  "cn-fill",');
+    lines.push(ind(3) + 'title: "中文情景题——读懂场景，填入最合适的西语词",');
+    lines.push(ind(3) + 'hint:  "从词库中选择，注意名词单复数形式。",');
+    lines.push(ind(3) + "items: [");
+    exCn.forEach(function(item, i) {
+      var comma = i < exCn.length - 1 ? "," : "";
+      lines.push(ind(4) + "{ q: " + q(item.q) + ", answer: " + q(item.answer) + " }" + comma);
+    });
+    lines.push(ind(3) + "]");
+    lines.push(ind(2) + "},");
+  }
+
+  // es-fill
+  if (exEs.length > 0) {
+    lines.push(ind(2) + "{");
+    lines.push(ind(3) + 'type:  "es-fill",');
+    lines.push(ind(3) + 'title: "西语填空题——选择正确形式填入空白处",');
+    lines.push(ind(3) + 'hint:  "注意名词的单复数变化。",');
+    lines.push(ind(3) + "items: [");
+    exEs.forEach(function(item, i) {
+      var comma = i < exEs.length - 1 ? "," : "";
+      lines.push(ind(4) + "{");
+      lines.push(ind(5) + "q:      " + q(item.q) + ",");
+      lines.push(ind(5) + "answer: " + q(item.answer));
+      lines.push(ind(4) + "}" + comma);
+    });
+    lines.push(ind(3) + "]");
+    lines.push(ind(2) + "},");
+  }
+
+  // correction
+  if (exCorr.length > 0) {
+    lines.push(ind(2) + "{");
+    lines.push(ind(3) + 'type:  "correction",');
+    lines.push(ind(3) + 'title: "判断改错题——找出句中用错的词并改正",');
+    lines.push(ind(3) + 'hint:  "每句只有一个词用错，错误词已加波浪线标注。",');
+    lines.push(ind(3) + "items: [");
+    exCorr.forEach(function(item, i) {
+      var comma = i < exCorr.length - 1 ? "," : "";
+      lines.push(ind(4) + "{");
+      lines.push(ind(5) + "sentence: " + q(item.sentence) + ",");
+      lines.push(ind(5) + "wrong:    " + q(item.wrong) + ",");
+      lines.push(ind(5) + "correct:  " + q(item.correct) + ",");
+      lines.push(ind(5) + "note:     " + q(item.note));
+      lines.push(ind(4) + "}" + comma);
+    });
+    lines.push(ind(3) + "]");
+    lines.push(ind(2) + "}");
+  }
+
+  lines.push(ind(1) + "]");
+  lines.push("};");
+
+  document.getElementById("output").textContent = lines.join("\n");
+}
+
+function copyCode() {
+  var text = document.getElementById("output").textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = document.getElementById("copy-btn");
+    btn.textContent = "✓ 已复制";
+    btn.classList.add("copied");
+    setTimeout(function() {
+      btn.textContent = "复制代码";
+      btn.classList.remove("copied");
+    }, 2000);
+  });
+}
+
+// 初始化一个空词条
+addWord();
+addExCn();
+addExEs();
+addExCorr();
+</script>
+</body>
+</html>
