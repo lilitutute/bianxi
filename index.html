@@ -41,7 +41,7 @@ var current    = 1;
 var missStreak = 0;
 var tbody      = document.getElementById("list-body");
 var table      = document.getElementById("list-table");
-var status     = document.getElementById("status");
+var statusEl     = document.getElementById("status");
 var emptyTip   = document.getElementById("empty-tip");
 
 function pad(n) {
@@ -49,13 +49,14 @@ function pad(n) {
 }
 
 function done() {
-  status.style.display = "none";
+  statusEl.style.display = "none";   // ← 改这里
   if (found === 0) {
     emptyTip.style.display = "block";
   } else {
     table.style.display = "table";
   }
 }
+
 
 function tryNext() {
   if (current > MAX_ID || missStreak >= STOP_AFTER) {
