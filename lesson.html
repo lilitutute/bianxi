@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>西语词汇辨析</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+
+  <div id="back-bar">
+    <a href="index.html" class="back-btn">← 返回目录</a>
+  </div>
+
+  <div id="app">
+    <div class="loading">加载中…</div>
+  </div>
+
+</div>
+
+<script>
+/* 从 URL 读取 ?id=001 */
+function getParam(key) {
+  var params = new URLSearchParams(window.location.search);
+  return params.get(key);
+}
+
+var id = getParam("id");
+
+if (!id) {
+  document.getElementById("app").innerHTML = "<div class='loading'>未指定篇目，请从目录进入。</div>";
+} else {
+  /* 动态加载对应的 data 文件 */
+  var script = document.createElement("script");
+  script.src = "data" + id + ".js";
+  script.onload = function() { render(DATA); };
+  script.onerror = function() {
+    document.getElementById("app").innerHTML =
+      "<div class='loading'>找不到 data" + id + ".js，请检查文件是否存在。</div>";
+  };
+  document.head.appendChild(script);
+}
+</script>
+
+<script>
+/* ════════════════════════════════
+   渲染引擎
+════════════════════════════════ */
+function render(data) {
+  var app = document.getElementById("app");
+  app.innerHTML =
+    renderHeader(data) +
+    "<div class='section-label'>快速对比</div>" +
+    renderCompareTable(data) +
+    "<hr class='divider'>" +
+    "<div class='section-label'>逐词详解</div>" +
+    renderDetailGrid(data) +
+    "<hr class='divider'>" +
+    "<div class='section-label'>练习题</div>" +
+    renderExercises(data);
+}
+
+function renderHeader(data) {
+  return "<div class='header'>" +
+    "<div>" +
+    "<div class='module-tag'>" + data.meta.module + "</div>" +
+    "<h1>" + data.meta.title + "</h1>" +
+    "</div>" +
+    "<div class='header-tag'>" + data.meta.tag + "</div>" +
+    "</div>";
+}
+
+function renderCompareTable(data) {
+  var headers = "<th class='label-col'></th>";
+  for (var i = 0; i < data.words.length; i++) {
+    headers += "<th>" + data.words[i].word + "</th>";
+  }
+  var rowDefs = [
+    { label: "词义",    key: "meaning" },
+    { label: "用法",    key: "usage"   },
+    { label: "核心搭配", key: "core"   }
+  ];
+  var rows = "";
+  for (var r = 0; r < rowDefs.length; r++) {
+    rows += "<tr><td class='label-col'>" + rowDefs[r].label + "</td>";
+    for (var i = 0; i < data.words.length; i++) {
+      rows += "<td>" + data.words[i].compare[rowDefs[r].key] + "</td>";
+    }
+    rows += "</tr>";
+  }
+  return "<table class='compare-table'><thead><tr>" +
+    headers + "</tr></thead><tbody>" + rows + "</tbody></table>";
+}
+
+function renderDetailGrid(data) {
+  var count = data.words.length;
+  var gridClass = "detail-grid";
+
+  var cards = "";
+  for (var i = 0; i < count; i++) {
+    var w = data.words[i];
+
+    var phrases = "";
+    for (var p = 0; p < w.collocations.length; p++) {
+      var c = w.collocations[p];
+      phrases += "<div class='phrase-item'>" +
+        "<span class='phrase-es'>" + c.phrase + "</span>" +
+        "<span class='phrase-zh'>" + c.phrase_zh + "</span>" +
+        "</div>";
+    }
+
+    var examples = "";
+    for (var p = 0; p < w.examples.length; p++) {
+      var ex = w.examples[p];
+      examples += "<div class='example-item'>" +
+        "<div class='example-es'>" + ex.es + "</div>" +
+        "<div class='example-zh'>" + ex.zh + "</div>" +
+        "</div>";
+    }
+
+    var related = "";
+    for (var r = 0; r < w.related.length; r++) {
+      related += "<span class='related-tag'><strong>" +
+        w.related[r].word + "</strong> " + w.related[r].note + "</span>";
+    }
+
+    cards += "<div class='word-card'>" +
+      "<div class='word-card-header'>" +
+      "<span class='word-title'>" + w.word + "</span>" +
+      "<span class='word-pos'>" + w.pos + "</span>" +
+      "</div>" +
+      "<div class='word-card-body'>" +
+      "<div><div class='card-label'>词义</div>" +
+      "<div class='card-content'>" + w.meaning + "</div></div>" +
+      "<div><div class='card-label'>联想记忆</div>" +
+      "<div class='memory-box'>" + w.memory + "</div></div>" +
+      "<div><div class='card-label'>常见搭配</div>" +
+      "<div class='phrase-list'>" + phrases + "</div></div>" +
+      "<div><div class='card-label'>例句</div>" +
+      "<div class='example-list'>" + examples + "</div></div>" +
+      "<div><div class='card-label'>相关词汇</div>" +
+      "<div class='related-list'>" + related + "</div></div>" +
+      "</div></div>";
+  }
+
+  return "<div class='" + gridClass + "'>" + cards + "</div>";
+}
+
+function renderExercises(data) {
+  var wordBank = "";
+  for (var i = 0; i < data.words.length; i++) {
+    wordBank += "<span class='word-chip'>" + data.words[i].word + "</span>";
+  }
+
+  var html = "";
+  for (var e = 0; e < data.exercises.length; e++) {
+    var ex = data.exercises[e];
+    var body = "";
+
+    if (ex.type === "cn-fill" || ex.type === "es-fill") {
+      var items = "";
+      for (var i = 0; i < ex.items.length; i++) {
+        var q = ex.items[i].q.replace("___", "<span class='blank'></span>");
+        items += "<div class='exercise-item'>" +
+          "<span class='q-num'>" + (i + 1) + ".</span>" +
+          "<span>" + q + "</span></div>";
+      }
+      body = "<div class='word-bank'>" + wordBank + "</div>" +
+        "<div class='exercise-items'>" + items + "</div>";
+
+    } else if (ex.type === "correction") {
+      for (var i = 0; i < ex.items.length; i++) {
+        var item = ex.items[i];
+        var sentence = item.sentence.replace(
+          "{" + item.wrong + "}",
+          "<span class='wrong-word'>" + item.wrong + "</span>"
+        );
+        body += "<div class='correction-item'>" + sentence +
+          "<div class='correction-note'>\u9519\u8bef\u8bcd\uff1a<span>" + item.wrong +
+          "</span> \u2192 \u5e94\u6539\u4e3a\uff1a<span>" + item.correct + "</span>" +
+          "&nbsp;\uff5c&nbsp;" + item.note + "</div></div>";
+      }
+    }
+
+    html += "<div class='exercise-block'>" +
+      "<div class='exercise-title'>" +
+      "<div class='ex-num'>" + (e + 1) + "</div>" + ex.title +
+      "</div>" +
+      "<div class='exercise-hint'>" + ex.hint + "</div>" +
+      body + "</div>";
+  }
+
+  var answerRows = "";
+  var layerNum = 1;
+  for (var e = 0; e < data.exercises.length; e++) {
+    if (data.exercises[e].type === "correction") continue;
+    var ans = "";
+    for (var i = 0; i < data.exercises[e].items.length; i++) {
+      ans += "<strong>" + (i + 1) + ".</strong> " +
+        data.exercises[e].items[i].answer + "&nbsp;&nbsp;";
+    }
+    answerRows += "<div class='answer-row'>\u7b2c" + layerNum +
+      "\u9898\uff1a" + ans + "</div>";
+    layerNum++;
+  }
+
+  html += "<div class='answer-section'>" +
+    "<div class='answer-title'>\u53c2\u8003\u7b54\u6848</div>" +
+    answerRows + "</div>";
+
+  return html;
+}
+</script>
+</body>
+</html>

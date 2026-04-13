@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>西语词汇辨析 · 目录</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div>
+      <div class="module-tag">Vocabulario Español</div>
+      <h1>西语词汇辨析</h1>
+    </div>
+    <div class="header-tag">INDEX</div>
+  </div>
+
+  <div class="section-label">全部篇目</div>
+  <div class="loading" id="status">正在扫描篇目…</div>
+  <table class="index-table" id="list-table" style="display:none">
+    <thead>
+      <tr>
+        <th class="label-col">编号</th>
+        <th>标题</th>
+        <th>模块</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="list-body"></tbody>
+  </table>
+  <div class="loading" id="empty-tip" style="display:none">暂无篇目，请添加 data001.js 开始使用。</div>
+
+</div>
+
+<script>
+var MAX_ID   = 200;   // 最多扫描到第几篇
+var found    = 0;     // 已找到的篇数
+var checked  = 0;     // 已检查的篇数
+var tbody    = document.getElementById("list-body");
+var table    = document.getElementById("list-table");
+var status   = document.getElementById("status");
+var emptyTip = document.getElementById("empty-tip");
+
+function pad(n) {
+  return n < 10 ? "00" + n : n < 100 ? "0" + n : "" + n;
+}
+
+function onAllChecked() {
+  status.style.display = "none";
+  if (found === 0) {
+    emptyTip.style.display = "block";
+  } else {
+    table.style.display = "table";
+  }
+}
+
+function tryLoad(id) {
+  var idStr  = pad(id);
+  var script = document.createElement("script");
+
+  /* 加一个随机参数防止缓存干扰 */
+  script.src = "data" + idStr + ".js?_=" + Date.now() + id;
+
+  script.onload = function() {
+    /* 加载成功，DATA 变量已就绪 */
+    var meta = (typeof DATA !== "undefined") ? DATA.meta : {};
+    var row  = "<tr>" +
+      "<td class='label-col'>" + idStr + "</td>" +
+      "<td><strong>" + (meta.title  || "（无标题）") + "</strong></td>" +
+      "<td>"          + (meta.module || "—")         + "</td>" +
+      "<td><a class='open-btn' href='lesson.html?id=" + idStr + "'>打开 →</a></td>" +
+      "</tr>";
+    tbody.innerHTML += row;
+    found++;
+
+    /* 清掉全局 DATA，避免下一个文件加载前误读 */
+    DATA = undefined;
+
+    checked++;
+    if (checked === MAX_ID) onAllChecked();
+  };
+
+  script.onerror = function() {
+    /* 文件不存在，静默跳过 */
+    checked++;
+    if (checked === MAX_ID) onAllChecked();
+  };
+
+  document.head.appendChild(script);
+}
+
+/* 依次尝试 001 ~ MAX_ID */
+for (var i = 1; i <= MAX_ID; i++) {
+  tryLoad(i);
+}
+</script>
+</body>
+</html>
