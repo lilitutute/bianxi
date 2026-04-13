@@ -33,21 +33,22 @@
   <div class="loading" id="empty-tip" style="display:none">暂无篇目，请添加 data001.js 开始使用。</div>
 
 </div>
-
 <script>
-var MAX_ID   = 200;   // 最多扫描到第几篇
-var found    = 0;     // 已找到的篇数
-var checked  = 0;     // 已检查的篇数
-var tbody    = document.getElementById("list-body");
-var table    = document.getElementById("list-table");
-var status   = document.getElementById("status");
-var emptyTip = document.getElementById("empty-tip");
+var MAX_ID     = 200;
+var STOP_AFTER = 3;
+var found      = 0;
+var current    = 1;
+var missStreak = 0;
+var tbody      = document.getElementById("list-body");
+var table      = document.getElementById("list-table");
+var status     = document.getElementById("status");
+var emptyTip   = document.getElementById("empty-tip");
 
 function pad(n) {
   return n < 10 ? "00" + n : n < 100 ? "0" + n : "" + n;
 }
 
-function onAllChecked() {
+function done() {
   status.style.display = "none";
   if (found === 0) {
     emptyTip.style.display = "block";
@@ -56,45 +57,45 @@ function onAllChecked() {
   }
 }
 
-function tryLoad(id) {
-  var idStr  = pad(id);
-  var script = document.createElement("script");
+function tryNext() {
+  if (current > MAX_ID || missStreak >= STOP_AFTER) {
+    done();
+    return;
+  }
 
-  /* 加一个随机参数防止缓存干扰 */
-  script.src = "data" + idStr + ".js?_=" + Date.now() + id;
+  var idStr  = pad(current);
+  var script = document.createElement("script");
+  script.src = "data" + idStr + ".js?_=" + Date.now();
 
   script.onload = function() {
-    /* 加载成功，DATA 变量已就绪 */
-    var meta = (typeof DATA !== "undefined") ? DATA.meta : {};
-    var row  = "<tr>" +
-      "<td class='label-col'>" + idStr + "</td>" +
-      "<td><strong>" + (meta.title  || "（无标题）") + "</strong></td>" +
-      "<td>"          + (meta.module || "—")         + "</td>" +
-      "<td><a class='open-btn' href='lesson.html?id=" + idStr + "'>打开 →</a></td>" +
-      "</tr>";
-    tbody.innerHTML += row;
-    found++;
-
-    /* 清掉全局 DATA，避免下一个文件加载前误读 */
-    DATA = undefined;
-
-    checked++;
-    if (checked === MAX_ID) onAllChecked();
+    if (typeof DATA !== "undefined" && DATA.meta) {
+      tbody.innerHTML +=
+        "<tr>" +
+        "<td class='label-col'>" + idStr + "</td>" +
+        "<td><strong>" + (DATA.meta.title  || "（无标题）") + "</strong></td>" +
+        "<td>"          + (DATA.meta.module || "—")         + "</td>" +
+        "<td><a class='open-btn' href='lesson.html?id=" + idStr + "'>打开 →</a></td>" +
+        "</tr>";
+      found++;
+      missStreak = 0;
+    }
+    window.DATA = undefined;
+    document.head.removeChild(script);
+    current++;
+    tryNext();
   };
 
   script.onerror = function() {
-    /* 文件不存在，静默跳过 */
-    checked++;
-    if (checked === MAX_ID) onAllChecked();
+    missStreak++;
+    document.head.removeChild(script);
+    current++;
+    tryNext();
   };
 
   document.head.appendChild(script);
 }
 
-/* 依次尝试 001 ~ MAX_ID */
-for (var i = 1; i <= MAX_ID; i++) {
-  tryLoad(i);
-}
+tryNext();
 </script>
 </body>
 </html>
