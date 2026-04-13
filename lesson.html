@@ -87,7 +87,10 @@
       flex-direction: column;
       gap: 12px;
     }
-    .modal-box h3 { color: #ccc; font-size: 14px; font-weight: 400; font-family: "PingFang SC", sans-serif; }
+    .modal-box h3 {
+      color: #ccc; font-size: 14px; font-weight: 400;
+      font-family: "PingFang SC", sans-serif;
+    }
     .modal-box textarea {
       flex: 1;
       min-height: 400px;
@@ -159,7 +162,8 @@ var id = getParam("id") || "001";
 var CURRENT_DATA = null;
 
 if (!getParam("id")) {
-  document.getElementById("app").innerHTML = "<div class='loading'>未指定篇目，请从目录进入。</div>";
+  document.getElementById("app").innerHTML =
+    "<div class='loading'>未指定篇目，请从目录进入。</div>";
 } else {
   var script = document.createElement("script");
   script.src = "data" + id + ".js";
@@ -197,19 +201,18 @@ function render(data) {
 /* 可编辑 span 工厂 */
 function E(value, path, block) {
   var cls = "editable" + (block ? " block" : "");
-  return "<span class='" + cls + "' contenteditable='false' data-path='" + path + "'>" + (value || "") + "</span>";
+  return "<span class='" + cls + "' contenteditable='false' data-path='" +
+    path + "'>" + (value || "") + "</span>";
 }
 
-/* ── 页眉：只保留标题，删除模块标签和右上角 tag ── */
+/* ── 页眉：只保留标题 ── */
 function renderHeader(data) {
   return "<div class='header'>" +
-    "<div>" +
-    "<h1>" + E(data.meta.title, "meta.title") + "</h1>" +
-    "</div>" +
+    "<div><h1>" + E(data.meta.title, "meta.title") + "</h1></div>" +
     "</div>";
 }
 
-/* ── 对比表：只保留词义和用法，删除核心搭配 ── */
+/* ── 对比表：只保留词义和用法 ── */
 function renderCompareTable(data) {
   var headers = "<th class='label-col'></th>";
   for (var i = 0; i < data.words.length; i++) {
@@ -223,7 +226,10 @@ function renderCompareTable(data) {
   for (var r = 0; r < rowDefs.length; r++) {
     rows += "<tr><td class='label-col'>" + rowDefs[r].label + "</td>";
     for (var i = 0; i < data.words.length; i++) {
-      rows += "<td>" + E(data.words[i].compare[rowDefs[r].key], "words." + i + ".compare." + rowDefs[r].key) + "</td>";
+      rows += "<td>" +
+        E(data.words[i].compare[rowDefs[r].key],
+          "words." + i + ".compare." + rowDefs[r].key) +
+        "</td>";
     }
     rows += "</tr>";
   }
@@ -239,16 +245,24 @@ function renderDetailGrid(data) {
     var phrases = "";
     for (var p = 0; p < w.collocations.length; p++) {
       phrases += "<div class='phrase-item'>" +
-        "<span class='phrase-es'>" + E(w.collocations[p].phrase,    "words." + i + ".collocations." + p + ".phrase") + "</span>" +
-        "<span class='phrase-zh'>" + E(w.collocations[p].phrase_zh, "words." + i + ".collocations." + p + ".phrase_zh") + "</span>" +
+        "<span class='phrase-es'>" +
+          E(w.collocations[p].phrase, "words." + i + ".collocations." + p + ".phrase") +
+        "</span>" +
+        "<span class='phrase-zh'>" +
+          E(w.collocations[p].phrase_zh, "words." + i + ".collocations." + p + ".phrase_zh") +
+        "</span>" +
         "</div>";
     }
 
     var examples = "";
     for (var p = 0; p < w.examples.length; p++) {
       examples += "<div class='example-item'>" +
-        "<div class='example-es'>" + E(w.examples[p].es, "words." + i + ".examples." + p + ".es", true) + "</div>" +
-        "<div class='example-zh'>" + E(w.examples[p].zh, "words." + i + ".examples." + p + ".zh", true) + "</div>" +
+        "<div class='example-es'>" +
+          E(w.examples[p].es, "words." + i + ".examples." + p + ".es", true) +
+        "</div>" +
+        "<div class='example-zh'>" +
+          E(w.examples[p].zh, "words." + i + ".examples." + p + ".zh", true) +
+        "</div>" +
         "</div>";
     }
 
@@ -263,25 +277,30 @@ function renderDetailGrid(data) {
 
     cards += "<div class='word-card'>" +
       "<div class='word-card-header'>" +
-      "<span class='word-title'>" + E(w.word, "words." + i + ".word") + "</span>" +
-      "<span class='word-pos'>"   + E(w.pos,  "words." + i + ".pos")  + "</span>" +
+        "<span class='word-title'>" + E(w.word, "words." + i + ".word") + "</span>" +
+        "<span class='word-pos'>"   + E(w.pos,  "words." + i + ".pos")  + "</span>" +
       "</div>" +
       "<div class='word-card-body'>" +
-      "<div><div class='card-label'>词义</div>" +
-      "<div class='card-content'>" + E(w.meaning, "words." + i + ".meaning", true) + "</div></div>" +
-      "<div><div class='card-label'>联想记忆</div>" +
-      "<div class='memory-box'>"   + E(w.memory,  "words." + i + ".memory",  true) + "</div></div>" +
-      "<div><div class='card-label'>常见搭配</div>" +
-      "<div class='phrase-list'>" + phrases + "</div></div>" +
-      "<div><div class='card-label'>例句</div>" +
-      "<div class='example-list'>" + examples + "</div></div>" +
-      "<div><div class='card-label'>相关词汇</div>" +
-      "<div class='related-list'>" + related + "</div></div>" +
+        "<div><div class='card-label'>词义</div>" +
+          "<div class='card-content'>" +
+            E(w.meaning, "words." + i + ".meaning", true) +
+          "</div></div>" +
+        "<div><div class='card-label'>联想记忆</div>" +
+          "<div class='memory-box'>" +
+            E(w.memory, "words." + i + ".memory", true) +
+          "</div></div>" +
+        "<div><div class='card-label'>常见搭配</div>" +
+          "<div class='phrase-list'>" + phrases + "</div></div>" +
+        "<div><div class='card-label'>例句</div>" +
+          "<div class='example-list'>" + examples + "</div></div>" +
+        "<div><div class='card-label'>相关词汇</div>" +
+          "<div class='related-list'>" + related + "</div></div>" +
       "</div></div>";
   }
   return "<div class='detail-grid'>" + cards + "</div>";
 }
 
+/* ── 练习题：删除 hint，第三题答案归入底部 ── */
 function renderExercises(data) {
   var wordBank = "";
   for (var i = 0; i < data.words.length; i++) {
@@ -298,7 +317,9 @@ function renderExercises(data) {
       for (var i = 0; i < ex.items.length; i++) {
         items += "<div class='exercise-item'>" +
           "<span class='q-num'>" + (i + 1) + ".</span>" +
-          "<span>" + E(ex.items[i].q, "exercises." + e + ".items." + i + ".q", true) + "</span></div>";
+          "<span>" +
+            E(ex.items[i].q, "exercises." + e + ".items." + i + ".q", true) +
+          "</span></div>";
       }
       body = "<div class='word-bank'>" + wordBank + "</div>" +
         "<div class='exercise-items'>" + items + "</div>";
@@ -310,37 +331,50 @@ function renderExercises(data) {
           "{" + item.wrong + "}",
           "<span class='wrong-word'>" + item.wrong + "</span>"
         );
-        body += "<div class='correction-item'>" + sentence +
-          "<div class='correction-note'>错误词：<span>" + item.wrong +
-          "</span> → 应改为：<span>" + E(item.correct, "exercises." + e + ".items." + i + ".correct") + "</span>" +
-          "&nbsp;｜&nbsp;" + E(item.note, "exercises." + e + ".items." + i + ".note", true) + "</div></div>";
+        /* 只显示题目句子，不显示答案 */
+        body += "<div class='correction-item'>" + sentence + "</div>";
       }
     }
 
+    /* hint 全部删除，不渲染 */
     html += "<div class='exercise-block'>" +
       "<div class='exercise-title'>" +
-      "<div class='ex-num'>" + (e + 1) + "</div>" + ex.title +
+        "<div class='ex-num'>" + (e + 1) + "</div>" + ex.title +
       "</div>" +
-      "<div class='exercise-hint'>" + ex.hint + "</div>" +
-      body + "</div>";
+      body +
+    "</div>";
   }
 
+  /* ── 统一答案区，包含第三题 ── */
   var answerRows = "";
   var layerNum = 1;
   for (var e = 0; e < data.exercises.length; e++) {
-    if (data.exercises[e].type === "correction") continue;
+    var ex = data.exercises[e];
     var ans = "";
-    for (var i = 0; i < data.exercises[e].items.length; i++) {
-      ans += "<strong>" + (i + 1) + ".</strong> " +
-        data.exercises[e].items[i].answer + "&nbsp;&nbsp;";
+
+    if (ex.type === "cn-fill" || ex.type === "es-fill") {
+      for (var i = 0; i < ex.items.length; i++) {
+        ans += "<strong>" + (i + 1) + ".</strong> " +
+          ex.items[i].answer + "&nbsp;&nbsp;";
+      }
+      answerRows += "<div class='answer-row'>第" + layerNum + "题：" + ans + "</div>";
+      layerNum++;
+
+    } else if (ex.type === "correction") {
+      for (var i = 0; i < ex.items.length; i++) {
+        ans += "<strong>" + (i + 1) + ".</strong> " +
+          ex.items[i].wrong + " → " + ex.items[i].correct +
+          "&nbsp;&nbsp;";
+      }
+      answerRows += "<div class='answer-row'>第" + layerNum + "题：" + ans + "</div>";
+      layerNum++;
     }
-    answerRows += "<div class='answer-row'>第" + layerNum + "题：" + ans + "</div>";
-    layerNum++;
   }
 
   html += "<div class='answer-section'>" +
     "<div class='answer-title'>参考答案</div>" +
-    answerRows + "</div>";
+    answerRows +
+  "</div>";
 
   return html;
 }
@@ -413,7 +447,9 @@ function exportData() {
     L.push(ind(3) + "collocations: [");
     for (var ci = 0; ci < w.collocations.length; ci++) {
       var clast = ci === w.collocations.length - 1;
-      L.push(ind(4) + "{ phrase: " + q(w.collocations[ci].phrase) + ", phrase_zh: " + q(w.collocations[ci].phrase_zh) + " }" + (clast ? "" : ","));
+      L.push(ind(4) + "{ phrase: " + q(w.collocations[ci].phrase) +
+        ", phrase_zh: " + q(w.collocations[ci].phrase_zh) + " }" +
+        (clast ? "" : ","));
     }
     L.push(ind(3) + "],");
 
@@ -430,7 +466,9 @@ function exportData() {
     L.push(ind(3) + "related: [");
     for (var ri = 0; ri < w.related.length; ri++) {
       var rlast = ri === w.related.length - 1;
-      L.push(ind(4) + "{ word: " + q(w.related[ri].word) + ", note: " + q(w.related[ri].note) + " }" + (rlast ? "" : ","));
+      L.push(ind(4) + "{ word: " + q(w.related[ri].word) +
+        ", note: " + q(w.related[ri].note) + " }" +
+        (rlast ? "" : ","));
     }
     L.push(ind(3) + "],");
 
@@ -460,7 +498,8 @@ function exportData() {
       var item  = ex.items[ii];
       var ilast = ii === ex.items.length - 1;
       if (ex.type === "cn-fill" || ex.type === "es-fill") {
-        L.push(ind(4) + "{ q: " + q(item.q) + ", answer: " + q(item.answer) + " }" + (ilast ? "" : ","));
+        L.push(ind(4) + "{ q: " + q(item.q) +
+          ", answer: " + q(item.answer) + " }" + (ilast ? "" : ","));
       } else {
         L.push(ind(4) + "{");
         L.push(ind(5) + "sentence: " + q(item.sentence) + ",");
