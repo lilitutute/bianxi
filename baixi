@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>西语形近词辨析</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Georgia', 'Noto Serif SC', serif; background: #f5f3ef; color: #2c2c2c; padding: 40px; }
+    .page { max-width: 1100px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 48px 52px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); }
+    .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #2c2c2c; padding-bottom: 16px; margin-bottom: 32px; }
+    .header-left .module-tag { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #888; margin-bottom: 6px; }
+    .header-left h1 { font-size: 22px; font-weight: 700; }
+    .header-right { font-size: 12px; color: #aaa; letter-spacing: 1px; }
+    .section-title { font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; color: #888; margin-bottom: 14px; }
+    .compare-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 40px; }
+    .compare-table th { background: #2c2c2c; color: #fff; padding: 12px 16px; text-align: left; font-size: 15px; }
+    .compare-table th.label-col { background: #f5f3ef; color: #888; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; width: 100px; }
+    .compare-table td { padding: 12px 16px; border-bottom: 1px solid #eee; vertical-align: top; line-height: 1.6; font-size: 14px; }
+    .compare-table td.label-col { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: #888; background: #fafaf8; font-weight: 600; }
+    .compare-table tr:last-child td { border-bottom: none; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+    .word-card { border: 1px solid #e8e8e8; border-radius: 8px; overflow: hidden; }
+    .word-card-header { padding: 14px 20px; color: #fff; }
+    .word-title { font-size: 18px; font-weight: 700; }
+    .word-pos { font-size: 12px; opacity: 0.75; font-style: italic; }
+    .word-card-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .card-row-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #aaa; margin-bottom: 4px; }
+    .card-row-content { font-size: 14px; line-height: 1.65; }
+    .memory-box { background: #fafaf8; border-left: 3px solid #ccc; border-radius: 0 6px 6px 0; padding: 10px 14px; font-size: 13.5px; line-height: 1.6; color: #555; font-style: italic; }
+    .collocation-list { display: flex; flex-direction: column; gap: 10px; }
+    .phrase { font-weight: 600; font-size: 14px; }
+    .phrase-zh { font-size: 12px; color: #888; margin-left: 6px; font-weight: 400; }
+    .example { font-size: 13px; color: #555; font-style: italic; margin-top: 3px; line-height: 1.55; }
+    .example-zh { font-size: 12px; color: #aaa; margin-top: 2px; }
+    .related-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .related-tag { background: #f0ede8; border-radius: 4px; padding: 4px 10px; font-size: 12.5px; color: #555; }
+    .exercise-block { margin-bottom: 28px; }
+    .exercise-block-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .ex-num { background: #2c2c2c; color: #fff; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .exercise-hint { font-size: 12px; color: #aaa; margin-bottom: 14px; font-style: italic; }
+    .word-bank { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .word-chip { background: #f0ede8; border-radius: 20px; padding: 4px 14px; font-size: 13px; font-style: italic; }
+    .exercise-items { display: flex; flex-direction: column; gap: 10px; }
+    .exercise-item { display: flex; gap: 10px; align-items: baseline; font-size: 14px; line-height: 1.65; }
+    .q-num { color: #aaa; font-size: 12px; flex-shrink: 0; width: 18px; }
+    .blank { display: inline-block; width: 120px; border-bottom: 1.5px solid #2c2c2c; margin: 0 4px; vertical-align: bottom; }
+    .correction-item { background: #fafaf8; border-radius: 6px; padding: 14px 18px; margin-bottom: 10px; font-size: 14px; line-height: 1.7; }
+    .wrong-word { text-decoration: underline; text-decoration-style: wavy; text-decoration-color: #c0392b; font-weight: 600; }
+    .correction-note { margin-top: 8px; font-size: 12.5px; color: #aaa; }
+    .correction-note span { color: #2c2c2c; font-weight: 600; }
+    .answer-section { margin-top: 32px; padding-top: 20px; border-top: 1px dashed #ddd; }
+    .answer-title { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #aaa; margin-bottom: 12px; }
+    .answer-row { font-size: 13px; color: #555; margin-bottom: 6px; }
+    .answer-row strong { color: #2c2c2c; }
+    hr.divider { border: none; border-top: 1px solid #eee; margin: 32px 0; }
+    @media print { body { background: #fff; padding: 0; } .page { box-shadow: none; border-radius: 0; } }
+  </style>
+</head>
+<body>
+<div class="page" id="app"></div>
+
+<script>
+const DATA = {
+  meta: {
+    module: "模块一 · 形近词辨析",
+    title:  "ex- 家族四兄弟",
+    tag:    "PRUEBA 1 · LÉXICO"
+  },
+  colors: ["#4a7c59", "#c0392b", "#2471a3", "#d4a017"],
+  words: [
+    {
+      word: "expansión",
+      pos:  "f. 名词",
+      meaning: "扩张、扩展——规模或范围<strong>持续变大</strong>的过程",
+      memory:  "ex<strong>pan</strong>sión \u2192 \u201cex胖了\u201d——因为一直在<strong>扩张</strong>，越来越胖 \uD83E\uDED3",
+      collocations: [
+        {
+          phrase:     "en expansión",
+          phrase_zh:  "处于扩张中",
+          example:    "Es un sector en rápida expansión.",
+          example_zh: "这是一个快速扩张的行业。"
+        },
+        {
+          phrase:     "expansión económica",
+          phrase_zh:  "经济扩张",
+          example:    "La expansión económica impulsó la creación de empleo.",
+          example_zh: "经济扩张推动了就业岗位的增加。"
+        }
+      ],
+      related: [
+        { word: "expansivo", note: "adj. 扩张性的" },
+        { word: "expandir",  note: "v. 扩展" }
+      ],
+      compare: { meaning: "扩张、扩展", usage: "规模持续变大", core: "en expansión" }
+    },
+    {
+      word: "explosión",
+      pos:  "f. 名词",
+      meaning: "爆炸；爆发——<strong>突然、剧烈</strong>地爆发（物理或比喻）",
+      memory:  "大声读 ex·<strong>PLO</strong>·sión，重音 \u201cPLO\u201d 就像爆炸声\u201c砰咯\u201d——自带音效 \uD83D\uDCA5",
+      collocations: [
+        {
+          phrase:     "explosión demográfica",
+          phrase_zh:  "人口爆炸",
+          example:    "El siglo XX fue testigo de una explosión demográfica sin precedentes.",
+          example_zh: "20世纪见证了前所未有的人口爆炸。"
+        },
+        {
+          phrase:     "explosión de ira",
+          phrase_zh:  "怒火爆发",
+          example:    "Su explosión de ira sorprendió a todos los presentes.",
+          example_zh: "他突然爆发的怒火让在场所有人大吃一惊。"
+        }
+      ],
+      related: [
+        { word: "explosivo", note: "adj./n. 爆炸性的；炸药" },
+        { word: "implosión", note: "n. 内爆" }
+      ],
+      compare: { meaning: "爆炸；爆发", usage: "突然剧烈爆发", core: "explosión demográfica" }
+    },
+    {
+      word: "expulsión",
+      pos:  "f. 名词",
+      meaning: "驱逐、开除——把人<strong>强制推出</strong>某空间或组织",
+      memory:  "ex<strong>pul</strong>sión \u2192 pul \u2248 英语 <strong>pull</strong>（拉出去）——被拉出场，红牌驱逐 \uD83D\uDFE5",
+      collocations: [
+        {
+          phrase:     "expulsión del campo",
+          phrase_zh:  "被驱逐出场",
+          example:    "El árbitro ordenó la expulsión del jugador tras la agresión.",
+          example_zh: "裁判在严重犯规后下令将该球员驱逐出场。"
+        },
+        {
+          phrase:     "expulsión del país",
+          phrase_zh:  "驱逐出境",
+          example:    "Las autoridades ordenaron su expulsión inmediata del país.",
+          example_zh: "当局下令立即将其驱逐出境。"
+        }
+      ],
+      related: [
+        { word: "expulsar",  note: "v. 驱逐" },
+        { word: "expulsado", note: "adj. 被驱逐的" }
+      ],
+      compare: { meaning: "驱逐、开除", usage: "强制推出某人", core: "expulsión del campo" }
+    },
+    {
+      word: "exportación",
+      pos:  "f. 名词",
+      meaning: "出口（贸易）——把商品或服务<strong>运往国外</strong>销售",
+      memory:  "ex<strong>port</strong>ación \u2192 port = 港口——货物从港口<strong>运出去</strong>，和英文 export 一模一样 \uD83D\uDEA2",
+      collocations: [
+        {
+          phrase:     "exportación de productos",
+          phrase_zh:  "产品出口",
+          example:    "Las exportaciones de vino español aumentaron un 12% el año pasado.",
+          example_zh: "去年西班牙葡萄酒出口量增长了12%。"
+        },
+        {
+          phrase:     "fomentar la exportación",
+          phrase_zh:  "促进出口",
+          example:    "El gobierno ofrece incentivos para fomentar la exportación de tecnología.",
+          example_zh: "政府提供激励措施以促进技术出口。"
+        }
+      ],
+      related: [
+        { word: "exportar",    note: "v. 出口" },
+        { word: "importación", note: "n. 进口" }
+      ],
+      compare: { meaning: "出口（贸易）", usage: "商品运往国外", core: "exportación de productos" }
+    }
+  ],
+  exercises: [
+    {
+      type:  "cn-fill",
+      title: "中文情景题——读懂场景，填入最合适的西语词",
+      hint:  "从词库中选择，注意名词单复数形式。",
+      items: [
+        { q: "公司在拉美地区新开了五家分公司，这属于商业的___。",             answer: "expansión" },
+        { q: "梅西因为严重犯规被裁判举红牌罚下场，这是一次___。",             answer: "expulsión" },
+        { q: "某短视频App突然爆红，该国网红数量在一个月内翻了十倍，这是___。", answer: "explosión" },
+        { q: "西班牙每年向中国运送大量猪肉，这属于___。",                   answer: "exportación" }
+      ]
+    },
+    {
+      type:  "es-fill",
+      title: "西语填空题——选择正确形式填入空白处",
+      hint:  "注意名词的单复数变化。",
+      items: [
+        {
+          q:      "La ___ de las redes móviles ha permitido a los usuarios disfrutar de una experiencia en línea más fluida.",
+          answer: "expansión"
+        },
+        {
+          q:      "El árbitro ordenó la ___ del jugador tras la agresión.",
+          answer: "expulsión"
+        },
+        {
+          q:      "Una ___ de gas destruyó la planta industrial por completo.",
+          answer: "explosión"
+        },
+        {
+          q:      "Las ___ de productos agrícolas representan el 30% de los ingresos del país.",
+          answer: "exportaciones"
+        }
+      ]
+    },
+    {
+      type:  "correction",
+      title: "判断改错题——找出句中用错的词并改正",
+      hint:  "每句只有一个词用错，错误词已加波浪线标注。",
+      items: [
+        {
+          sentence:  "La {explosión} de la empresa en el mercado asiático ha sido muy exitosa este año.",
+          wrong:     "explosión",
+          correct:   "expansión",
+          note:      "公司在市场上是扩张，不是爆炸……虽然听起来也挺厉害的 😄"
+        },
+        {
+          sentence:  "El gobierno firmó un acuerdo para aumentar la {expulsión} de tecnología a Europa.",
+          wrong:     "expulsión",
+          correct:   "exportación",
+          note:      "向欧洲出口技术，不是驱逐技术——技术又没犯规 🟥"
+        }
+      ]
+    }
+  ]
+};
+
+// ── 渲染引擎（不需要修改）──
+
+function render(data) {
+  const app = document.getElementById("app");
+  app.innerHTML =
+    renderHeader(data) +
+    "<div class='section-title'>快速对比</div>" +
+    renderCompareTable(data) +
+    "<hr class='divider'>" +
+    "<div class='section-title'>逐词详解</div>" +
+    renderDetailGrid(data) +
+    "<hr class='divider'>" +
+    "<div class='section-title'>练习题</div>" +
+    renderExercises(data);
+}
+
+function renderHeader(data) {
+  return "<div class='header'>" +
+    "<div class='header-left'>" +
+    "<div class='module-tag'>" + data.meta.module + "</div>" +
+    "<h1>" + data.meta.title + "</h1>" +
+    "</div>" +
+    "<div class='header-right'>" + data.meta.tag + "</div>" +
+    "</div>";
+}
+
+function renderCompareTable(data) {
+  var headers = "<th class='label-col'></th>";
+  for (var i = 0; i < data.words.length; i++) {
+    headers += "<th style='border-top:3px solid " + data.colors[i] + "'>" + data.words[i].word + "</th>";
+  }
+
+  var rowDefs = [
+    { label: "词义",   key: "meaning" },
+    { label: "用法",   key: "usage"   },
+    { label: "核心搭配", key: "core"  }
+  ];
+
+  var rows = "";
+  for (var r = 0; r < rowDefs.length; r++) {
+    rows += "<tr><td class='label-col'>" + rowDefs[r].label + "</td>";
+    for (var i = 0; i < data.words.length; i++) {
+      rows += "<td>" + data.words[i].compare[rowDefs[r].key] + "</td>";
+    }
+    rows += "</tr>";
+  }
+
+  return "<table class='compare-table'><thead><tr>" + headers + "</tr></thead><tbody>" + rows + "</tbody></table>";
+}
+
+function renderDetailGrid(data) {
+  var cards = "";
+  for (var i = 0; i < data.words.length; i++) {
+    var w = data.words[i];
+    var color = data.colors[i];
+
+    var collocs = "";
+    for (var c = 0; c < w.collocations.length; c++) {
+      var col = w.collocations[c];
+      collocs +=
+        "<div>" +
+        "<div class='phrase'>" + col.phrase + "<span class='phrase-zh'>" + col.phrase_zh + "</span></div>" +
+        "<div class='example'>" + col.example + "</div>" +
+        "<div class='example-zh'>" + col.example_zh + "</div>" +
+        "</div>";
+    }
+
+    var related = "";
+    for (var r = 0; r < w.related.length; r++) {
+      related += "<span class='related-tag'><strong>" + w.related[r].word + "</strong> " + w.related[r].note + "</span>";
+    }
+
+    cards +=
+      "<div class='word-card'>" +
+      "<div class='word-card-header' style='background:" + color + "'>" +
+      "<div class='word-title'>" + w.word + "</div>" +
+      "<div class='word-pos'>" + w.pos + "</div>" +
+      "</div>" +
+      "<div class='word-card-body'>" +
+      "<div><div class='card-row-label'>词义</div><div class='card-row-content'>" + w.meaning + "</div></div>" +
+      "<div><div class='card-row-label'>💡 联想记忆</div><div class='memory-box' style='border-left-color:" + color + "'>" + w.memory + "</div></div>" +
+      "<div><div class='card-row-label'>📌 搭配 · 例句</div><div class='collocation-list'>" + collocs + "</div></div>" +
+      "<div><div class='card-row-label'>🔗 相关词汇</div><div class='related-list'>" + related + "</div></div>" +
+      "</div></div>";
+  }
+
+  return "<div class='detail-grid'>" + cards + "</div>";
+}
+
+function renderExercises(data) {
+  var wordBank = "";
+  for (var i = 0; i < data.words.length; i++) {
+    wordBank += "<span class='word-chip'>" + data.words[i].word + "</span>";
+  }
+
+  var html = "";
+  for (var e = 0; e < data.exercises.length; e++) {
+    var ex = data.exercises[e];
+    var body = "";
+
+    if (ex.type === "cn-fill" || ex.type === "es-fill") {
+      var items = "";
+      for (var i = 0; i < ex.items.length; i++) {
+        var q = ex.items[i].q.replace("___", "<span class='blank'></span>");
+        items += "<div class='exercise-item'><span class='q-num'>" + (i + 1) + ".</span><span>" + q + "</span></div>";
+      }
+      body = "<div class='word-bank'>" + wordBank + "</div><div class='exercise-items'>" + items + "</div>";
+
+    } else if (ex.type === "correction") {
+      for (var i = 0; i < ex.items.length; i++) {
+        var item = ex.items[i];
+        var sentence = item.sentence.replace(
+          "{" + item.wrong + "}",
+          "<span class='wrong-word'>" + item.wrong + "</span>"
+        );
+        body +=
+          "<div class='correction-item'>" + sentence +
+          "<div class='correction-note'>错误词：<span>" + item.wrong + "</span> → 应改为：<span>" + item.correct + "</span> &nbsp;｜&nbsp; " + item.note + "</div>" +
+          "</div>";
+      }
+    }
+
+    html +=
+      "<div class='exercise-block'>" +
+      "<div class='exercise-block-title'><div class='ex-num'>" + (e + 1) + "</div>" + ex.title + "</div>" +
+      "<div class='exercise-hint'>" + ex.hint + "</div>" +
+      body +
+      "</div>";
+  }
+
+  // 答案
+  var answerRows = "";
+  var layerNum = 1;
+  for (var e = 0; e < data.exercises.length; e++) {
+    if (data.exercises[e].type === "correction") continue;
+    var ans = "";
+    for (var i = 0; i < data.exercises[e].items.length; i++) {
+      ans += "<strong>" + (i + 1) + ".</strong> " + data.exercises[e].items[i].answer + " &nbsp; ";
+    }
+    answerRows += "<div class='answer-row'>第" + layerNum + "层：" + ans + "</div>";
+    layerNum++;
+  }
+
+  html += "<div class='answer-section'><div class='answer-title'>参考答案</div>" + answerRows + "</div>";
+  return html;
+}
+
+render(DATA);
+</script>
+</body>
+</html>
